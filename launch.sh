@@ -14,7 +14,7 @@ aws ec2 wait instance-running --instance-ids ${instancecheck[@]}
 
 echo "All instances are now running"
 
-ELBURL=(`aws elb create-load-balancer --load-balancer-name $8 --listeners "Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80" --security-groups $4 --subnets $5 --output=text`);
+aws elb create-load-balancer --load-balancer-name $8 --listeners "Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80" --security-groups $4 --subnets $5 --output=text
 
 echo -e "\nFinished launching ELB and waiting 25 seconds"
 
