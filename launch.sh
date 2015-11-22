@@ -36,9 +36,9 @@ PolicyARN1=(`aws autoscaling put-scaling-policy --policy-name $11 --auto-scaling
 
 PolicyARN2=(`aws autoscaling put-scaling-policy --policy-name $12 --auto-scaling-group-name $10 --scaling-adjustment -1 --adjustment-type ChangeInCapacity`);
 
-aws cloudwatch put-metric-alarm --alarm-name AddCapacity --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 120 --threshold 30 --comparison-operator GreaterThanOrEqualToThreshold --dimensions "Name=AutoScalingGroupName,Value=$10" --evaluation-periods 2 --alarm-actions $PolicyARN1
+aws cloudwatch put-metric-alarm --alarm-name AddCapacity --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 120 --threshold 30 --comparison-operator GreaterThanOrEqualToThreshold --dimensions "Name=AutoScalingGroupName,Value=$10" --evaluation-periods 2 --alarm-actions $PolicyARN1 --unit Percent
 
-aws cloudwatch put-metric-alarm --alarm-name RemoveCapacity --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 120 --threshold 10 --comparison-operator LessThanOrEqualToThreshold --dimensions "Name=AutoScalingGroupName,Value=$10" --evaluation-periods 2 --alarm-actions $PolicyARN2
+aws cloudwatch put-metric-alarm --alarm-name RemoveCapacity --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 120 --threshold 10 --comparison-operator LessThanOrEqualToThreshold --dimensions "Name=AutoScalingGroupName,Value=$10" --evaluation-periods 2 --alarm-actions $PolicyARN2 --unit Percent
 
 mapfile -t dbInstanceARR < <(aws rds describe-db-instances --output json | grep "\"DBInstanceIdentifier" | sed "s/[\"\:\, ]//g" | sed "s/DBInstanceIdentifier//g")
 
@@ -50,8 +50,11 @@ mapfile -t dbInstanceARR < <(aws rds describe-db-instances --output json | grep 
      then 
       echo "db exists"
      else
-     aws rds create-db-instance --db-name mp1jphdb --db-instance-identifier mp1jphdb --db-instance-class db.t1.micro --engine MySQL --master-username jhedlund --master-user-password letmeinplease --allocated-storage 20 --vpc-security-group-ids $4 --db-subnet-group-name db-mp1-subnet
+     aws rds create-db-instance --db-name mp1jphdb --db-instance-identifier mp1jphdb --db-instance-class db.t1.micro --engine MySQL --master-username jhedlund --master-user-password letmeinplease --allocated-storage 20 --vpc-security-group-ids $4 --db-subnet-group-name db-mp1-subnet --publicily-accessible 
       fi  
      done
+
+aws rds wait db-instance-available --db-instance-identifier mp1jphdb
+
 
 
