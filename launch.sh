@@ -2,7 +2,7 @@
 
 # Arguement commands are as followed: ami-d05e75b8 3 t2.micro sg-4a82be2d subnet-08d9f951 itmo444springVMWare mp1 mp1-elb mp1-launch-config mp1-auto-scaling-group mp1-scaleup-policy mp1-scaledown-policy
 
-./cleanup.sh
+#./cleanup.sh
 
 declare -a instancecheck
 
@@ -25,19 +25,18 @@ for i in {0..25};do echo -ne '.';sleep 1;done
 echo -e "\n"
 
 aws elb register-instances-with-load-balancer --load-balancer-name $8 --instances ${instancecheck[@]}
-
 aws elb configure-health-check --load-balancer-name $8 --health-check Target=HTTP:80/index.html,Interval=30,UnhealthyThreshold=2,HealthyThreshold=2,Timeout=3
+aws elb create-lb-cookie-stickiness-policy --load-balancer-name $8 --policy-name MPFINAL-SP --cookie-expiration-period 300
+aws elb set-load-balancer-policies-of-listener --load-balancer-name $8 --load-balancer-port 80 --policy-names MPFINAL-SP
+aws elb describe-load-balancers --load-balancer-name $8
 
 aws autoscaling create-launch-configuration --launch-configuration-name $9 --image-id $1 --key-name $6  --security-groups $4 --instance-type $3 --user-data file://environment-setup/install-env.sh --iam-instance-profile $7 --associate-public-ip-address
-
 aws autoscaling create-auto-scaling-group --auto-scaling-group-name $10 --launch-configuration-name $9 --load-balancer-names $8  --health-check-type ELB --min-size 3 --max-size 6 --desired-capacity 3 --default-cooldown 600 --health-check-grace-period 120 --vpc-zone-identifier $5
 
 PolicyARN1=(`aws autoscaling put-scaling-policy --policy-name $11 --auto-scaling-group-name $10 --scaling-adjustment 1 --adjustment-type ChangeInCapacity`);
-
 PolicyARN2=(`aws autoscaling put-scaling-policy --policy-name $12 --auto-scaling-group-name $10 --scaling-adjustment -1 --adjustment-type ChangeInCapacity`);
 
 aws cloudwatch put-metric-alarm --alarm-name AddCapacity --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 120 --threshold 30 --comparison-operator GreaterThanOrEqualToThreshold --dimensions "Name=AutoScalingGroupName,Value=$10" --evaluation-periods 2 --alarm-actions $PolicyARN1 --unit Percent
-
 aws cloudwatch put-metric-alarm --alarm-name RemoveCapacity --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 120 --threshold 10 --comparison-operator LessThanOrEqualToThreshold --dimensions "Name=AutoScalingGroupName,Value=$10" --evaluation-periods 2 --alarm-actions $PolicyARN2 --unit Percent
 
 mapfile -t dbInstanceARR < <(aws rds describe-db-instances --output json | grep "\"DBInstanceIdentifier" | sed "s/[\"\:\, ]//g" | sed "s/DBInstanceIdentifier//g")
