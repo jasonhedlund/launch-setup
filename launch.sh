@@ -49,11 +49,12 @@ mapfile -t dbInstanceARR < <(aws rds describe-db-instances --output json | grep 
      then 
       echo "db exists"
      else
-     aws rds create-db-instance --db-name mp1jphdb --db-instance-identifier mp1jphdb --db-instance-class db.t1.micro --engine MySQL --master-username jhedlund --master-user-password letmeinplease --allocated-storage 20 --vpc-security-group-ids $4 --db-subnet-group-name db-mp1-subnet 
+     aws rds create-db-instance --db-name mp1jphdb --db-instance-identifier mp1jphdb --db-instance-class db.t1.micro --engine MySQL --master-username jhedlund --master-user-password letmeinplease --allocated-storage 20 --vpc-security-group-ids $4 --db-subnet-group-name db-mp1-subnet
+     aws rds wait db-instance-available --db-instance-identifier mp1jphdb
+     aws rds create-db-instance-read-replica --db-instance-indentifier mpfinal-replica --source-db-instance-identifier mp1jphdb
       fi  
      done
 
-aws rds wait db-instance-available --db-instance-identifier mp1jphdb
-
+echo "All done!"
 
 
